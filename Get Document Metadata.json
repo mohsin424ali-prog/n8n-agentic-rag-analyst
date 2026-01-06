@@ -1,0 +1,170 @@
+{
+  "name": "Get Document Metadata",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "get-document-metadata",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        240,
+        400
+      ],
+      "webhookId": "get-doc-metadata",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "url": "http://qdrant:6333/collections/documents",
+        "options": {}
+      },
+      "id": "query-qdrant",
+      "name": "Query Qdrant Collection",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        464,
+        304
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const collectionInfo = $input.first().json;\n\nif (!collectionInfo || !collectionInfo.result) {\n  return {\n    json: {\n      success: false,\n      message: 'Collection not found or empty. No documents have been uploaded yet.',\n      totalChunks: 0,\n      totalVectors: 0,\n      uniqueDocuments: 0,\n      documents: []\n    }\n  };\n}\n\nconst pointsCount = collectionInfo.result.points_count || 0;\nconst vectorsCount = collectionInfo.result.vectors_count || 0;\n\nreturn {\n  json: {\n    success: true,\n    totalChunks: pointsCount,\n    totalVectors: vectorsCount,\n    collectionName: 'documents'\n  }\n};"
+      },
+      "id": "process-metadata",
+      "name": "Process Metadata",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        688,
+        304
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "url": "http://qdrant:6333/collections/documents/points/scroll?limit=100&with_payload=true",
+        "options": {}
+      },
+      "id": "get-document-list",
+      "name": "Get Document List",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        464,
+        496
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "jsCode": "const scrollData = $input.first().json;\nconst documentSet = new Set();\n\nif (scrollData && scrollData.result && scrollData.result.points) {\n  scrollData.result.points.forEach(point => {\n    if (point.payload && point.payload.metadata && point.payload.metadata.source) {\n      documentSet.add(point.payload.metadata.source);\n    }\n  });\n}\n\nconst documents = Array.from(documentSet).sort();\n\nreturn {\n  json: {\n    documents: documents,\n    uniqueDocuments: documents.length\n  }\n};"
+      },
+      "id": "extract-documents",
+      "name": "Extract Documents",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        688,
+        496
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  success: true,\n  totalChunks: $('Process Metadata').item.json.totalChunks,\n  totalVectors: $('Process Metadata').item.json.totalVectors,\n  uniqueDocuments: $('Extract Documents').item.json.uniqueDocuments,\n  documents: $('Extract Documents').item.json.documents,\n  collectionName: 'documents'\n} }}",
+        "options": {}
+      },
+      "id": "return-metadata",
+      "name": "Return Metadata",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        912,
+        400
+      ],
+      "typeVersion": 1.1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Query Qdrant Collection",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Get Document List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Query Qdrant Collection": {
+      "main": [
+        [
+          {
+            "node": "Process Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Document List": {
+      "main": [
+        [
+          {
+            "node": "Extract Documents",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Metadata": {
+      "main": [
+        [
+          {
+            "node": "Return Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Documents": {
+      "main": [
+        [
+          {
+            "node": "Return Metadata",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "executionTimeout": 3600,
+    "timezone": "UTC",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "9ce4dd3a-d93e-4ca9-99c7-106e550a21cd",
+  "meta": {
+    "instanceId": "bb37b45d10d4090dd28801f3823a016afb7826dd6c107441934b348e6e982ba1"
+  },
+  "id": "ahVMDJ7bgAAXqwtB",
+  "tags": []
+}

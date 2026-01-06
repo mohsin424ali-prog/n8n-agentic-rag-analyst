@@ -1,0 +1,242 @@
+{
+  "name": "Document Upload Portal",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "upload-documents",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "upload-form-webhook",
+      "name": "Upload Form",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        240,
+        304
+      ],
+      "webhookId": "upload-docs-form",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "=<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Document Upload Portal</title>\n    <style>\n        * { margin: 0; padding: 0; box-sizing: border-box; }\n        body {\n            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;\n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n            min-height: 100vh;\n            display: flex;\n            align-items: center;\n            justify-content: center;\n            padding: 20px;\n        }\n        .container {\n            background: white;\n            border-radius: 20px;\n            box-shadow: 0 20px 60px rgba(0,0,0,0.3);\n            padding: 40px;\n            max-width: 600px;\n            width: 100%;\n        }\n        h1 {\n            color: #333;\n            margin-bottom: 10px;\n            font-size: 28px;\n        }\n        .subtitle {\n            color: #666;\n            margin-bottom: 30px;\n            font-size: 14px;\n        }\n        .upload-area {\n            border: 3px dashed #667eea;\n            border-radius: 10px;\n            padding: 40px;\n            text-align: center;\n            cursor: pointer;\n            transition: all 0.3s ease;\n            background: #f8f9ff;\n        }\n        .upload-area:hover {\n            border-color: #764ba2;\n            background: #f0f2ff;\n        }\n        .upload-area.dragover {\n            border-color: #764ba2;\n            background: #e8ebff;\n            transform: scale(1.02);\n        }\n        .upload-icon {\n            font-size: 48px;\n            margin-bottom: 20px;\n        }\n        .upload-text {\n            color: #666;\n            font-size: 16px;\n            margin-bottom: 10px;\n        }\n        .file-info {\n            color: #999;\n            font-size: 12px;\n        }\n        input[type=\"file\"] {\n            display: none;\n        }\n        .btn {\n            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n            color: white;\n            border: none;\n            padding: 15px 40px;\n            border-radius: 10px;\n            font-size: 16px;\n            font-weight: 600;\n            cursor: pointer;\n            width: 100%;\n            margin-top: 20px;\n            transition: all 0.3s ease;\n            display: none;\n        }\n        .btn:hover {\n            transform: translateY(-2px);\n            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);\n        }\n        .btn:disabled {\n            opacity: 0.5;\n            cursor: not-allowed;\n        }\n        .selected-file {\n            background: #e8f5e9;\n            border: 2px solid #4caf50;\n            border-radius: 10px;\n            padding: 15px;\n            margin-top: 20px;\n            display: none;\n        }\n        .file-name {\n            color: #2e7d32;\n            font-weight: 600;\n            font-size: 14px;\n        }\n        .file-size {\n            color: #66bb6a;\n            font-size: 12px;\n            margin-top: 5px;\n        }\n        .status {\n            margin-top: 20px;\n            padding: 15px;\n            border-radius: 10px;\n            text-align: center;\n            font-weight: 600;\n            display: none;\n        }\n        .status.success {\n            background: #e8f5e9;\n            color: #2e7d32;\n            border: 2px solid #4caf50;\n        }\n        .status.error {\n            background: #ffebee;\n            color: #c62828;\n            border: 2px solid #f44336;\n        }\n        .status.processing {\n            background: #fff3e0;\n            color: #ef6c00;\n            border: 2px solid #ff9800;\n        }\n        .spinner {\n            border: 3px solid #f3f3f3;\n            border-top: 3px solid #667eea;\n            border-radius: 50%;\n            width: 30px;\n            height: 30px;\n            animation: spin 1s linear infinite;\n            margin: 0 auto 10px;\n            display: none;\n        }\n        @keyframes spin {\n            0% { transform: rotate(0deg); }\n            100% { transform: rotate(360deg); }\n        }\n        .info-box {\n            background: #e3f2fd;\n            border-left: 4px solid #2196f3;\n            padding: 15px;\n            margin-top: 20px;\n            border-radius: 5px;\n            font-size: 13px;\n            color: #1565c0;\n        }\n    </style>\n</head>\n<body>\n    <div class=\"container\">\n        <h1>📄 Document Upload Portal</h1>\n        <p class=\"subtitle\">Upload company documents for AI-powered search and analysis</p>\n        \n        <form id=\"uploadForm\" enctype=\"multipart/form-data\">\n            <div class=\"upload-area\" id=\"uploadArea\">\n                <div class=\"upload-icon\">📁</div>\n                <div class=\"upload-text\">Drag and drop your PDF here</div>\n                <div class=\"upload-text\" style=\"margin: 10px 0;\">or</div>\n                <div class=\"upload-text\" style=\"color: #667eea; font-weight: 600;\">Click to browse</div>\n                <div class=\"file-info\">Only PDF files are accepted • Max 50MB</div>\n                <input type=\"file\" id=\"fileInput\" name=\"file\" accept=\".pdf\" required>\n            </div>\n            \n            <div class=\"selected-file\" id=\"selectedFile\">\n                <div class=\"file-name\" id=\"fileName\"></div>\n                <div class=\"file-size\" id=\"fileSize\"></div>\n            </div>\n            \n            <button type=\"submit\" class=\"btn\" id=\"uploadBtn\">Upload Document</button>\n        </form>\n        \n        <div class=\"spinner\" id=\"spinner\"></div>\n        <div class=\"status\" id=\"status\"></div>\n        \n        <div class=\"info-box\">\n            💡 <strong>Tip:</strong> After upload, documents are automatically processed and available for queries in 5-10 seconds.\n        </div>\n    </div>\n    \n    <script>\n        const uploadArea = document.getElementById('uploadArea');\n        const fileInput = document.getElementById('fileInput');\n        const uploadBtn = document.getElementById('uploadBtn');\n        const selectedFile = document.getElementById('selectedFile');\n        const fileName = document.getElementById('fileName');\n        const fileSize = document.getElementById('fileSize');\n        const status = document.getElementById('status');\n        const spinner = document.getElementById('spinner');\n        const uploadForm = document.getElementById('uploadForm');\n        \n        uploadArea.addEventListener('click', () => fileInput.click());\n        \n        uploadArea.addEventListener('dragover', (e) => {\n            e.preventDefault();\n            uploadArea.classList.add('dragover');\n        });\n        \n        uploadArea.addEventListener('dragleave', () => {\n            uploadArea.classList.remove('dragover');\n        });\n        \n        uploadArea.addEventListener('drop', (e) => {\n            e.preventDefault();\n            uploadArea.classList.remove('dragover');\n            const files = e.dataTransfer.files;\n            if (files.length > 0) {\n                fileInput.files = files;\n                displayFileInfo(files[0]);\n            }\n        });\n        \n        fileInput.addEventListener('change', (e) => {\n            if (e.target.files.length > 0) {\n                displayFileInfo(e.target.files[0]);\n            }\n        });\n        \n        function displayFileInfo(file) {\n            fileName.textContent = file.name;\n            fileSize.textContent = `Size: ${(file.size / 1024 / 1024).toFixed(2)} MB`;\n            selectedFile.style.display = 'block';\n            uploadBtn.style.display = 'block';\n            status.style.display = 'none';\n        }\n        \n        uploadForm.addEventListener('submit', async (e) => {\n            e.preventDefault();\n            \n            const file = fileInput.files[0];\n            if (!file) {\n                showStatus('Please select a file', 'error');\n                return;\n            }\n            \n            if (file.size > 50 * 1024 * 1024) {\n                showStatus('File too large. Maximum size is 50MB', 'error');\n                return;\n            }\n            \n            uploadBtn.disabled = true;\n            spinner.style.display = 'block';\n            showStatus('Uploading and processing document...', 'processing');\n            \n            const formData = new FormData();\n            formData.append('file', file);\n            \n            try {\n                const response = await fetch(window.location.href.replace('/upload-documents', '/upload-documents-process'), {\n                    method: 'POST',\n                    body: formData\n                });\n                \n                const result = await response.json();\n                \n                spinner.style.display = 'none';\n                \n                if (response.ok) {\n                    showStatus('✅ Document uploaded successfully! Processing in background...', 'success');\n                    setTimeout(() => {\n                        uploadForm.reset();\n                        selectedFile.style.display = 'none';\n                        uploadBtn.style.display = 'none';\n                        uploadBtn.disabled = false;\n                    }, 3000);\n                } else {\n                    showStatus('❌ Upload failed: ' + (result.error || 'Unknown error'), 'error');\n                    uploadBtn.disabled = false;\n                }\n            } catch (error) {\n                spinner.style.display = 'none';\n                showStatus('❌ Upload failed: ' + error.message, 'error');\n                uploadBtn.disabled = false;\n            }\n        });\n        \n        function showStatus(message, type) {\n            status.textContent = message;\n            status.className = 'status ' + type;\n            status.style.display = 'block';\n        }\n    </script>\n</body>\n</html>",
+        "options": {}
+      },
+      "id": "respond-form",
+      "name": "Show Upload Form",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        464,
+        304
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "upload-documents-process",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "process-upload-webhook",
+      "name": "Process Upload",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        240,
+        720
+      ],
+      "webhookId": "upload-docs-process",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.contentType }}",
+              "value2": "multipart/form-data",
+              "operation": "contains"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "check-file-uploaded",
+      "name": "File Uploaded?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        464,
+        720
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract file from binary data\nconst binaryData = $input.first().binary;\n\nif (!binaryData || !binaryData.file) {\n  throw new Error('No file uploaded');\n}\n\nconst fileData = binaryData.file;\nconst fileName = fileData.fileName || 'uploaded_document.pdf';\nconst mimeType = fileData.mimeType || '';\n\n// Validate PDF\nif (!mimeType.includes('pdf') && !fileName.toLowerCase().endsWith('.pdf')) {\n  throw new Error('Only PDF files are accepted');\n}\n\n// Generate safe filename\nconst timestamp = Date.now();\nconst sanitizedName = fileName.replace(/[^a-zA-Z0-9._-]/g, '_');\nconst finalFileName = `${timestamp}_${sanitizedName}`;\n\nreturn {\n  json: {\n    fileName: finalFileName,\n    originalName: fileName,\n    fileSize: fileData.fileSize,\n    mimeType: fileData.mimeType,\n    uploadedAt: new Date().toISOString()\n  },\n  binary: {\n    data: fileData\n  }\n};"
+      },
+      "id": "extract-file-info",
+      "name": "Extract File Info",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        688,
+        624
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/files/{{ $json.fileName }}",
+        "options": {}
+      },
+      "id": "save-to-disk",
+      "name": "Save to Files Folder",
+      "type": "n8n-nodes-base.readWriteFile",
+      "position": [
+        912,
+        624
+      ],
+      "typeVersion": 1.1,
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": true,\n  \"message\": \"Document uploaded successfully\",\n  \"fileName\": $json.originalName,\n  \"fileSize\": $json.fileSize,\n  \"uploadedAt\": $json.uploadedAt,\n  \"status\": \"Document is being processed in background. It will be available for queries in 5-10 seconds.\"\n} }}",
+        "options": {}
+      },
+      "id": "success-response",
+      "name": "Success Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1136,
+        528
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": false,\n  \"error\": \"No file uploaded. Please select a PDF file.\"\n} }}",
+        "options": {
+          "responseCode": 400
+        }
+      },
+      "id": "error-no-file",
+      "name": "Error - No File",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        688,
+        816
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ {\n  \"success\": false,\n  \"error\": \"Failed to save file. Please try again or contact support.\",\n  \"details\": $json.error || 'Unknown error'\n} }}",
+        "options": {
+          "responseCode": 500
+        }
+      },
+      "id": "error-response",
+      "name": "Error Response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        1136,
+        720
+      ],
+      "typeVersion": 1.1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Upload Form": {
+      "main": [
+        [
+          {
+            "node": "Show Upload Form",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "File Uploaded?": {
+      "main": [
+        [
+          {
+            "node": "Extract File Info",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error - No File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Upload": {
+      "main": [
+        [
+          {
+            "node": "File Uploaded?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract File Info": {
+      "main": [
+        [
+          {
+            "node": "Save to Files Folder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to Files Folder": {
+      "main": [
+        [
+          {
+            "node": "Success Response",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Error Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "saveExecutionProgress": true,
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "executionTimeout": 3600,
+    "timezone": "UTC",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "3888742d-bf0c-493f-8077-822fe628db7b",
+  "meta": {
+    "instanceId": "bb37b45d10d4090dd28801f3823a016afb7826dd6c107441934b348e6e982ba1"
+  },
+  "id": "jMdDv8x1y5iIXj25",
+  "tags": []
+}
